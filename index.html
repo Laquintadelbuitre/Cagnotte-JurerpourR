@@ -353,8 +353,26 @@
     state.mode = mode;
     if (mode === "live"){ statusDot.className = "dot live"; statusText.textContent = "Synchronisé"; }
     else if (mode === "demo"){ statusDot.className = "dot"; statusText.textContent = "Mode démo"; }
-    else if (mode === "error"){ statusDot.className = "dot"; statusText.textContent = "Connexion impossible"; }
+    else if (mode === "error"){
+      statusDot.className = "dot";
+      statusText.textContent = state.amendes.length ? "Hors ligne (dernier montant connu)" : "Connexion…";
+    }
     else { statusDot.className = "dot"; statusText.textContent = "Connexion…"; }
+  }
+
+  // ---- Cache local (survit aux coupures réseau et aux rechargements) ----
+  var CACHE_KEY = "cagnotte-langage-cache-v1";
+  function saveCache(amendes){
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ amendes: amendes, savedAt: Date.now() })); }
+    catch (e) { /* stockage indisponible (navigation privée, etc.) : sans conséquence */ }
+  }
+  function loadCache(){
+    try {
+      var raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      return (parsed && Array.isArray(parsed.amendes)) ? parsed.amendes : null;
+    } catch (e) { return null; }
   }
 
   function updateTotal(){
@@ -454,18 +472,29 @@
     }).then(function(r){ return r.json(); });
   }
 
+  var retryTimer = null;
+
   function loadFromBackend(){
     apiGet().then(function(res){
       if (!res || !res.ok){ throw new Error("bad response"); }
       state.amendes = (res.amendes || []).slice();
+      saveCache(state.amendes);
       setStatus("live");
       render();
+      if (retryTimer){ clearTimeout(retryTimer); retryTimer = null; }
     }).catch(function(){
       // La synchronisation a échoué (réseau, Sheet pas encore prêt, etc.) :
-      // on le signale, mais les 23 pastilles restent affichées quand même
-      // puisqu'elles ne dépendent pas de cette réponse.
+      // on le signale, mais on GARDE les derniers montants connus affichés
+      // (venant du cache local ou du dernier chargement réussi) au lieu de
+      // les effacer, et on retente plus vite que le rythme normal.
       setStatus("error");
       render();
+      if (!retryTimer){
+        retryTimer = setTimeout(function(){
+          retryTimer = null;
+          loadFromBackend();
+        }, 5000);
+      }
     });
   }
 
@@ -475,7 +504,11 @@
   }
 
   function init(){
-    // Affiche immédiatement les 23 pastilles, sans attendre le réseau.
+    // Charge d'abord le dernier montant connu localement (si disponible),
+    // pour ne jamais afficher "0 €" juste parce que le réseau met du temps
+    // à répondre, puis affiche immédiatement les 23 pastilles.
+    var cached = loadCache();
+    if (cached) state.amendes = cached;
     render();
 
     if (!hasBackend()){
