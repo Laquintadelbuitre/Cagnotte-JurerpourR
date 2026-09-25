@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cagnotte fair-play — Limoges Football</title>
+<meta name="description" content="Compteur des amendes fair-play (jurons, insultes) pendant les entraînements U13 du Limoges Football, synchronisé en direct.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* identité Limoges Football — même palette que la cagnotte Sénégal */
+    --bg-top:     #0c1322;
+    --bg-bottom:  #182642;
+
+    --ink:        #fff6ec;
+    --ink-soft:   #c9d2e0;
+    --card-bg:    rgba(15, 22, 40, 0.6);
+    --card-bg-solid: #16213b;
+    --card-border:rgba(255, 255, 255, 0.14);
+    --card-shadow: 0 20px 45px -20px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.04) inset;
+
+    --gold:       #fdd116;
+    --blue:       #4472c4;
+    --juron:      #f6a63c;
+    --insulte:    #c81e2c;
+    --ok:         #4cc26a;
+    --live-dot:   #4cc26a;
+    --demo-dot:   #fdd116;
+
+    color-scheme: dark;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0; min-height:100%;
+    background:
+      radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,.05), transparent 60%),
+      linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    color: var(--ink);
+    font-family: "Inter", system-ui, sans-serif;
+    padding: 28px 18px 52px;
+    overflow-x:hidden;
+  }
+
+  h1,h2,.display{ font-family:"Fredoka", system-ui, sans-serif; }
+  .num{ font-variant-numeric: tabular-nums; font-family:"Space Mono", ui-monospace, monospace; }
+
+  .wrap{ max-width: 1100px; margin: 0 auto; }
+
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+    flex-wrap:wrap; margin-bottom:22px;
+  }
+  .title-row{ display:flex; align-items:center; gap:16px; }
+  .club-logo{ width:56px; height:56px; flex:none; filter: drop-shadow(0 2px 10px rgba(0,0,0,.35)); }
+  header .eyebrow{
+    font-size:12px; text-transform:uppercase; letter-spacing:.16em; color: var(--gold);
+    margin:0 0 6px; font-weight:600;
+  }
+  h1{ font-size: clamp(26px,4.6vw,38px); margin:0; font-weight:600; }
+  .status{
+    display:flex; align-items:center; gap:9px; font-size:13px; color: var(--ink-soft);
+    background: var(--card-bg); border:1px solid var(--card-border); border-radius:999px;
+    padding:8px 16px 8px 12px; backdrop-filter: blur(8px);
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; background: var(--demo-dot); flex:none; }
+  .dot.live{ background: var(--live-dot); box-shadow: 0 0 0 4px color-mix(in srgb, var(--live-dot) 25%, transparent); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 3px color-mix(in srgb, var(--live-dot) 25%, transparent) } 50%{ box-shadow:0 0 0 7px color-mix(in srgb, var(--live-dot) 10%, transparent) } }
+  .status button{
+    border:none; background:transparent; color: var(--ink-soft); cursor:pointer; font-size:13px;
+    padding:2px 6px; border-radius:6px; font-family:inherit; text-decoration:underline;
+  }
+  .status button:hover{ color: var(--ink); }
+
+  /* ---- Bandeau total ---- */
+  .totalBanner{
+    background: var(--card-bg-solid); border:1px solid var(--card-border); border-radius:22px;
+    box-shadow: var(--card-shadow); padding:22px 26px; margin-bottom:26px;
+    display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap;
+  }
+  .totalBanner .label{ font-size:13px; color: var(--ink-soft); text-transform:uppercase; letter-spacing:.1em; margin:0 0 4px; }
+  .totalBanner .amount{ font-size: clamp(34px,6vw,48px); font-weight:700; margin:0; }
+  .rules{ display:flex; gap:10px; flex-wrap:wrap; }
+  .rule-chip{
+    display:flex; align-items:center; gap:7px; background: rgba(255,255,255,.06);
+    border:1px solid var(--card-border); border-radius:999px; padding:8px 14px; font-size:13px;
+  }
+  .rule-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+
+  .grid{
+    display:grid; gap:20px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .card{
+    background: var(--card-bg-solid); border:1px solid var(--card-border); border-radius:20px;
+    padding:20px 20px 18px; box-shadow: var(--card-shadow);
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .name-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .name{ font-size:19px; margin:0; line-height:1.2; font-weight:600; }
+  .icon-btn{
+    border:none; background:transparent; color: var(--ink-soft); cursor:pointer;
+    font-size:13px; padding:5px 8px; border-radius:8px; font-family:inherit;
+  }
+  .icon-btn:hover{ background: rgba(255,255,255,.08); color: var(--ink); }
+  .icon-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:1px; }
+
+  .infraction-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background: rgba(255,255,255,.04); border:1px solid var(--card-border); border-radius:14px;
+    padding:10px 12px;
+  }
+  .infraction-info{ display:flex; align-items:center; gap:9px; }
+  .infraction-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .infraction-label{ font-size:14px; }
+  .infraction-count{ font-size:12.5px; color: var(--ink-soft); }
+  .stepper{ display:flex; align-items:center; gap:6px; }
+  .stepper button{
+    width:30px; height:30px; border-radius:9px; border:1px solid var(--card-border);
+    background: rgba(255,255,255,.06); color: var(--ink); font-size:16px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:inherit;
+  }
+  .stepper button:hover{ background: rgba(255,255,255,.12); }
+  .stepper button.plus.juron{ border-color: var(--juron); color:#1a0f10; background: var(--juron); }
+  .stepper button.plus.juron:hover{ filter:brightness(1.08); }
+  .stepper button.plus.insulte{ border-color: var(--insulte); background: var(--insulte); color:#fff6ec; }
+  .stepper button.plus.insulte:hover{ filter:brightness(1.1); }
+  .stepper button:disabled{ opacity:.35; cursor:default; }
+
+  .subtotal{
+    display:flex; align-items:baseline; justify-content:space-between; padding-top:6px;
+    border-top:1px dashed var(--card-border);
+  }
+  .subtotal .lbl{ font-size:12.5px; color: var(--ink-soft); text-transform:uppercase; letter-spacing:.08em; }
+  .subtotal .val{ font-size:21px; font-weight:700; }
+
+  .edit-panel{ display:flex; flex-direction:column; gap:9px; padding-top:8px; border-top:1px dashed var(--card-border); }
+  .edit-panel label{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color: var(--ink-soft); display:block; margin-bottom:3px; }
+  .edit-actions{ display:flex; justify-content:space-between; gap:8px; margin-top:2px; }
+
+  input[type="number"], input[type="text"]{
+    font-family: inherit; font-size:14px; color: var(--ink);
+    background: rgba(255,255,255,.06); border:1px solid var(--card-border);
+    border-radius:10px; padding:10px 11px; width:100%;
+  }
+  input::placeholder{ color: var(--ink-soft); }
+  input:focus-visible{ outline:2px solid var(--gold); outline-offset:1px; }
+  button{ font-family:"Inter", sans-serif; font-weight:600; font-size:14px; cursor:pointer; border-radius:10px; border:1px solid transparent; padding:10px 15px; }
+  button:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .btn-primary{ background: linear-gradient(135deg, #ff5a1f, var(--gold)); color:#1a0f10; white-space:nowrap; font-weight:700; }
+  .btn-primary:hover{ filter: brightness(1.08); }
+  .btn-ghost{ background: rgba(255,255,255,.06); border-color: var(--card-border); color: var(--ink); }
+  .btn-ghost:hover{ background: rgba(255,255,255,.12); }
+  .btn-danger{ background:transparent; border-color: var(--card-border); color: var(--insulte); }
+  .btn-danger.confirm{ background: var(--insulte); color:#fff6ec; border-color: var(--insulte); }
+
+  .field-error{ margin:-4px 0 0; font-size:12.5px; color: var(--insulte); }
+
+  .new-card{
+    border:2px dashed var(--card-border); background:transparent; box-shadow:none;
+    align-items:center; justify-content:center; text-align:center; min-height:180px; gap:12px;
+  }
+  .new-card p{ margin:0; color: var(--ink-soft); font-size:14px; max-width:24ch; }
+  .new-form{ display:flex; flex-direction:column; gap:9px; width:100%; }
+  .hint{ font-size:12px; color: var(--ink-soft); margin-top:2px; }
+
+  footer{ text-align:center; color: var(--ink-soft); font-size:12px; margin-top:36px; opacity:.8; }
+
+  @media (max-width:480px){
+    .totalBanner{ flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="title-row">
+      <img class="club-logo" src="assets/logo-limoges-football.png" alt="Limoges Football">
+      <div>
+        <p class="eyebrow">Entraînements U13 · Fair-play</p>
+        <h1>Cagnotte langage</h1>
+      </div>
+    </div>
+    <div class="status" id="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Connexion…</span>
+      <button id="refreshBtn" type="button" title="Rafraîchir">↻</button>
+    </div>
+  </header>
+
+  <div class="totalBanner">
+    <div>
+      <p class="label">Total collecté</p>
+      <p class="amount num" id="totalAmount">0 €</p>
+    </div>
+    <div class="rules">
+      <span class="rule-chip"><span class="rule-dot" style="background:var(--juron)"></span>0,50 € par juron</span>
+      <span class="rule-chip"><span class="rule-dot" style="background:var(--insulte)"></span>1 € par insulte</span>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>Limoges Football U13 · Cagnotte fair-play · propulsé par Google Sheets</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     ⚙️  CONFIGURATION
+     ============================================================
+     Même Google Sheet / même déploiement Apps Script que la
+     cagnotte "Cap sur le Sénégal" (onglet "Amendes" séparé).
+     Laissez vide pour lancer la page en mode démonstration.
+  ============================================================ */
+  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyoWvec73omyuk3pqeE0S3SNyiQzVK6oAMmdaEfTmx45d6y2gR1TY9I5jO2zM3WghVIwA/exec";
+  var POLL_MS = 15000;
+
+  var TARIF_JURON = 0.5;
+  var TARIF_INSULTE = 1;
+
+  var DEMO_JOUEURS = [
+    { id:"demo-1", nom:"Exemple — Léo", jurons:2, insultes:0 },
+    { id:"demo-2", nom:"Exemple — Noah", jurons:0, insultes:1 }
+  ];
+
+  var state = { joueurs: [], mode: "loading" };
+  var editingId = null;
+  var confirmDeleteId = null;
+  var showNewForm = false;
+  var pollTimer = null;
+
+  var grid = document.getElementById("grid");
+  var statusDot = document.getElementById("statusDot");
+  var statusText = document.getElementById("statusText");
+  var refreshBtn = document.getElementById("refreshBtn");
+  var totalAmountEl = document.getElementById("totalAmount");
+
+  function euros(n){
+    n = Number(n) || 0;
+    return new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EUR", minimumFractionDigits: (n % 1 !== 0) ? 2 : 0, maximumFractionDigits:2 }).format(n);
+  }
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function subtotal(j){
+    return (Number(j.jurons)||0) * TARIF_JURON + (Number(j.insultes)||0) * TARIF_INSULTE;
+  }
+
+  function setStatus(mode){
+    state.mode = mode;
+    if (mode === "live"){ statusDot.className = "dot live"; statusText.textContent = "Synchronisé"; }
+    else if (mode === "demo"){ statusDot.className = "dot"; statusText.textContent = "Mode démo"; }
+    else if (mode === "error"){ statusDot.className = "dot"; statusText.textContent = "Connexion impossible"; }
+    else { statusDot.className = "dot"; statusText.textContent = "Connexion…"; }
+  }
+
+  function updateTotal(){
+    var total = state.joueurs.reduce(function(sum, j){ return sum + subtotal(j); }, 0);
+    totalAmountEl.textContent = euros(total);
+  }
+
+  function infractionRow(j, type){
+    var isJuron = type === "juron";
+    var count = isJuron ? (Number(j.jurons)||0) : (Number(j.insultes)||0);
+    var tarif = isJuron ? TARIF_JURON : TARIF_INSULTE;
+    var label = isJuron ? "Juron" : "Insulte";
+    var colorVar = isJuron ? "var(--juron)" : "var(--insulte)";
+    return (
+      '<div class="infraction-row">' +
+        '<div class="infraction-info">' +
+          '<span class="infraction-dot" style="background:' + colorVar + '"></span>' +
+          '<div>' +
+            '<div class="infraction-label">' + label + ' <span class="hint" style="margin:0">(' + euros(tarif) + ')</span></div>' +
+            '<div class="infraction-count num">' + count + ' × ' + euros(tarif) + ' = ' + euros(count * tarif) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="stepper">' +
+          '<button type="button" data-action="dec" data-type="' + type + '" data-id="' + j.id + '"' + (count <= 0 ? ' disabled' : '') + '>−</button>' +
+          '<button type="button" class="plus ' + type + '" data-action="inc" data-type="' + type + '" data-id="' + j.id + '">+</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function playerCard(j){
+    var isEditing = editingId === j.id;
+    var isConfirmingDelete = confirmDeleteId === j.id;
+
+    var head =
+      '<div class="name-row">' +
+        '<h2 class="name">' + esc(j.nom || "Joueur") + '</h2>' +
+        '<button class="icon-btn" data-action="toggle-edit" data-id="' + j.id + '">' + (isEditing ? "Fermer" : "Modifier") + '</button>' +
+      '</div>';
+
+    var rows = infractionRow(j, "juron") + infractionRow(j, "insulte");
+
+    var sub =
+      '<div class="subtotal">' +
+        '<span class="lbl">Total joueur</span>' +
+        '<span class="val num">' + euros(subtotal(j)) + '</span>' +
+      '</div>';
+
+    var editPanel = "";
+    if (isEditing){
+      editPanel =
+        '<div class="edit-panel">' +
+          '<div><label>Nom</label><input type="text" data-field="nom" value="' + esc(j.nom) + '"></div>' +
+          '<div class="edit-actions">' +
+            '<button class="' + (isConfirmingDelete ? 'btn-danger confirm' : 'btn-danger') + '" data-action="delete" data-id="' + j.id + '">' + (isConfirmingDelete ? "Confirmer la suppression" : "Supprimer") + '</button>' +
+            '<button class="btn-primary" data-action="save" data-id="' + j.id + '">Enregistrer</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    var card = document.createElement("div");
+    card.className = "card";
+    card.dataset.id = j.id;
+    card.innerHTML = head + rows + sub + editPanel;
+    return card;
+  }
+
+  function newPlayerCard(){
+    var card = document.createElement("div");
+    card.className = "card new-card";
+    if (!showNewForm){
+      card.innerHTML =
+        '<p>Ajouter un joueur au suivi fair-play.</p>' +
+        '<button class="btn-ghost" data-action="show-new-form">+ Nouveau joueur</button>';
+    } else {
+      card.innerHTML =
+        '<div class="new-form">' +
+          '<div><label class="hint">Nom du joueur</label><input type="text" data-field="new-nom" placeholder="Ex : Léo Martin"></div>' +
+          '<p class="field-error" hidden>Indiquez un nom.</p>' +
+          '<div class="edit-actions">' +
+            '<button type="button" class="btn-ghost" data-action="cancel-new-form">Annuler</button>' +
+            '<button type="button" class="btn-primary" data-action="create-player">Ajouter</button>' +
+          '</div>' +
+        '</div>';
+    }
+    return card;
+  }
+
+  function render(){
+    grid.innerHTML = "";
+    state.joueurs
+      .slice()
+      .sort(function(a,b){ return String(a.nom).localeCompare(String(b.nom), "fr"); })
+      .forEach(function(j){ grid.appendChild(playerCard(j)); });
+    grid.appendChild(newPlayerCard());
+    updateTotal();
+  }
+
+  function hasBackend(){ return !!APPS_SCRIPT_URL; }
+
+  function apiGet(){
+    return fetch(APPS_SCRIPT_URL, { method: "GET" }).then(function(r){ return r.json(); });
+  }
+  function apiPost(action, payload){
+    var body = Object.assign({ action: action }, payload);
+    return fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(body)
+    }).then(function(r){ return r.json(); });
+  }
+
+  function loadFromBackend(){
+    apiGet().then(function(res){
+      if (!res || !res.ok){ throw new Error("bad response"); }
+      state.joueurs = (res.joueurs || []).slice();
+      setStatus("live");
+      render();
+    }).catch(function(){
+      setStatus("error");
+    });
+  }
+
+  function startPolling(){
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(loadFromBackend, POLL_MS);
+  }
+
+  function init(){
+    if (!hasBackend()){
+      state.joueurs = DEMO_JOUEURS.slice();
+      setStatus("demo");
+      render();
+      return;
+    }
+    loadFromBackend();
+    startPolling();
+  }
+
+  refreshBtn.addEventListener("click", function(){ if (hasBackend()) loadFromBackend(); });
+
+  // ---- Mutations ----
+  function bump(id, type, delta){
+    var j = state.joueurs.find(function(x){ return x.id === id; });
+    if (!j) return;
+    var field = type === "juron" ? "jurons" : "insultes";
+    j[field] = Math.max(0, (Number(j[field]) || 0) + delta);
+    render();
+    if (hasBackend()){
+      apiPost("add_infraction", { id: id, type: type, delta: delta }).then(function(res){
+        if (res && res.ok && res.joueur){
+          var idx = state.joueurs.findIndex(function(x){ return x.id === id; });
+          if (idx > -1){ state.joueurs[idx] = res.joueur; render(); }
+        } else {
+          loadFromBackend();
+        }
+      }).catch(function(){});
+    }
+  }
+
+  function writePlayer(id, patch){
+    var j = state.joueurs.find(function(x){ return x.id === id; });
+    if (!j) return;
+    Object.assign(j, patch);
+    render();
+    if (hasBackend()){
+      apiPost("update_joueur", Object.assign({ id: id }, patch)).then(function(res){
+        if (!res || !res.ok) loadFromBackend();
+      }).catch(function(){});
+    }
+  }
+
+  function addPlayer(nom){
+    if (hasBackend()){
+      apiPost("add_joueur", { nom: nom }).then(function(){ loadFromBackend(); }).catch(function(){});
+    } else {
+      state.joueurs.push({ id: "j" + Date.now(), nom: nom, jurons: 0, insultes: 0 });
+      render();
+    }
+  }
+
+  function removePlayer(id){
+    state.joueurs = state.joueurs.filter(function(x){ return x.id !== id; });
+    render();
+    if (hasBackend()){
+      apiPost("delete_joueur", { id: id }).catch(function(){});
+    }
+  }
+
+  // ---- Events ----
+  grid.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    var action = btn.dataset.action;
+    var id = btn.dataset.id;
+
+    if (action === "inc"){
+      bump(id, btn.dataset.type, 1);
+    } else if (action === "dec"){
+      bump(id, btn.dataset.type, -1);
+    } else if (action === "toggle-edit"){
+      editingId = editingId === id ? null : id;
+      confirmDeleteId = null;
+      render();
+    } else if (action === "save"){
+      var card = btn.closest(".card");
+      var nom = card.querySelector('[data-field="nom"]').value.trim() || "Joueur";
+      writePlayer(id, { nom: nom });
+      editingId = null;
+    } else if (action === "delete"){
+      if (confirmDeleteId === id){
+        removePlayer(id);
+        confirmDeleteId = null;
+        editingId = null;
+      } else {
+        confirmDeleteId = id;
+        render();
+      }
+    } else if (action === "show-new-form"){
+      showNewForm = true;
+      render();
+    } else if (action === "cancel-new-form"){
+      showNewForm = false;
+      render();
+    } else if (action === "create-player"){
+      submitNewPlayer(btn);
+    }
+  });
+
+  grid.addEventListener("keydown", function(e){
+    if (e.key !== "Enter") return;
+    var newForm = e.target.closest(".new-form");
+    if (newForm){
+      e.preventDefault();
+      submitNewPlayer(newForm.querySelector('[data-action="create-player"]'));
+    }
+  });
+
+  function submitNewPlayer(btn){
+    var card = btn.closest(".card");
+    var nom = card.querySelector('[data-field="new-nom"]').value.trim();
+    if (!nom){
+      var msg = card.querySelector(".field-error");
+      if (msg) msg.hidden = false;
+      return;
+    }
+    showNewForm = false;
+    addPlayer(nom);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
