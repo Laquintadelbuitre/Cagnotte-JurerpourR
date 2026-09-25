@@ -272,18 +272,36 @@
 
   var TARIF_JURON = 0.5;
 
-  var NOMS_DEMO = [
-    "Abdoul Karim","Adam","Bakoutoubo","Bilel","Emir","Ethan","Gabin","Hadi","Issam",
-    "Jalil","Kalifa","Keys","Loan","Mathis","Melih","Mickaël","Nourou","Pablo",
-    "Sacha","Sarah","Sebastien","Selyan","Yanis"
+  /* Liste fixe des 23 joueurs — écrite ici en dur, ne dépend d'aucune
+     feuille Google Sheet : elle s'affiche donc toujours, même si
+     l'onglet "Joueurs" du Sheet est vide ou pas encore créé. */
+  var JOUEURS = [
+    { id:"j1",  nom:"Abdoul Karim" },
+    { id:"j2",  nom:"Adam" },
+    { id:"j3",  nom:"Bakoutoubo" },
+    { id:"j4",  nom:"Bilel" },
+    { id:"j5",  nom:"Emir" },
+    { id:"j6",  nom:"Ethan" },
+    { id:"j7",  nom:"Gabin" },
+    { id:"j8",  nom:"Hadi" },
+    { id:"j9",  nom:"Issam" },
+    { id:"j10", nom:"Jalil" },
+    { id:"j11", nom:"Kalifa" },
+    { id:"j12", nom:"Keys" },
+    { id:"j13", nom:"Loan" },
+    { id:"j14", nom:"Mathis" },
+    { id:"j15", nom:"Melih" },
+    { id:"j16", nom:"Mickaël" },
+    { id:"j17", nom:"Nourou" },
+    { id:"j18", nom:"Pablo" },
+    { id:"j19", nom:"Sacha" },
+    { id:"j20", nom:"Sarah" },
+    { id:"j21", nom:"Sebastien" },
+    { id:"j22", nom:"Selyan" },
+    { id:"j23", nom:"Yanis" }
   ];
-  function demoJoueurs(){
-    return NOMS_DEMO.map(function(nom, i){ return { id: "j" + (i+1), nom: nom }; });
-  }
 
-  var state = { joueurs: [], amendes: [], mode: "loading" };
-  var editingId = null;
-  var confirmDeleteId = null;
+  var state = { amendes: [], mode: "loading" };
   var lastActionId = null;
   var pollTimer = null;
   var pulseId = null;
@@ -315,7 +333,7 @@
     return "il y a " + h + " h";
   }
   function sortedJoueurs(){
-    return state.joueurs.slice().sort(function(a,b){
+    return JOUEURS.slice().sort(function(a,b){
       return String(a.nom).localeCompare(String(b.nom), "fr", { numeric: true });
     });
   }
@@ -368,23 +386,12 @@
     var joueurs = sortedJoueurs();
     playersGrid.innerHTML = joueurs.map(function(j){
       var total = totalFor(j.id);
-      var isEditing = editingId === j.id;
-      var isConfirmingDelete = confirmDeleteId === j.id;
-      var row =
+      return (
         '<div class="player-row" data-id="' + j.id + '">' +
           '<span class="pname" title="' + esc(j.nom) + '">' + esc(j.nom) + '</span>' +
           '<span class="ptotal num' + (total <= 0 ? ' zero' : '') + '">' + euros(total) + '</span>' +
-          '<button type="button" class="pedit" data-action="toggle-edit" data-id="' + j.id + '" title="Modifier">✏️</button>' +
-        '</div>';
-      if (!isEditing) return row;
-      return row +
-        '<div class="edit-panel">' +
-          '<input type="text" data-field="nom" data-id="' + j.id + '" value="' + esc(j.nom) + '">' +
-          '<div class="edit-actions">' +
-            '<button type="button" class="' + (isConfirmingDelete ? 'btn-danger confirm' : 'btn-danger') + '" data-action="delete" data-id="' + j.id + '">' + (isConfirmingDelete ? "Confirmer" : "Supprimer") + '</button>' +
-            '<button type="button" class="btn-primary" data-action="save" data-id="' + j.id + '">Enregistrer</button>' +
-          '</div>' +
-        '</div>';
+        '</div>'
+      );
     }).join("");
   }
 
@@ -450,12 +457,15 @@
   function loadFromBackend(){
     apiGet().then(function(res){
       if (!res || !res.ok){ throw new Error("bad response"); }
-      state.joueurs = (res.joueurs || []).slice();
       state.amendes = (res.amendes || []).slice();
       setStatus("live");
       render();
     }).catch(function(){
+      // La synchronisation a échoué (réseau, Sheet pas encore prêt, etc.) :
+      // on le signale, mais les 23 pastilles restent affichées quand même
+      // puisqu'elles ne dépendent pas de cette réponse.
       setStatus("error");
+      render();
     });
   }
 
@@ -465,8 +475,10 @@
   }
 
   function init(){
+    // Affiche immédiatement les 23 pastilles, sans attendre le réseau.
+    render();
+
     if (!hasBackend()){
-      state.joueurs = demoJoueurs();
       state.amendes = [];
       setStatus("demo");
       render();
@@ -520,28 +532,6 @@
     }
   }
 
-  function writePlayer(id, patch){
-    var j = state.joueurs.find(function(x){ return x.id === id; });
-    if (!j) return;
-    Object.assign(j, patch);
-    render();
-    if (hasBackend()){
-      apiPost("update_joueur", Object.assign({ id: id }, patch)).then(function(res){
-        if (!res || !res.ok) loadFromBackend();
-      }).catch(function(){});
-    }
-  }
-
-  function removePlayer(id){
-    state.joueurs = state.joueurs.filter(function(x){ return x.id !== id; });
-    editingId = null;
-    confirmDeleteId = null;
-    render();
-    if (hasBackend()){
-      apiPost("delete_joueur", { id: id }).catch(function(){});
-    }
-  }
-
   // ---- Events ----
   document.addEventListener("click", function(e){
     var btn = e.target.closest("[data-action]");
@@ -550,36 +540,10 @@
     var id = btn.dataset.id;
 
     if (action === "tap-tile"){
-      var joueur = state.joueurs.find(function(x){ return x.id === id; });
+      var joueur = JOUEURS.find(function(x){ return x.id === id; });
       addInfraction(id, joueur ? joueur.nom : "");
     } else if (action === "undo-last"){
       undoLast();
-    } else if (action === "toggle-edit"){
-      editingId = editingId === id ? null : id;
-      confirmDeleteId = null;
-      renderPlayers();
-    } else if (action === "save"){
-      var input = document.querySelector('[data-field="nom"][data-id="' + id + '"]');
-      var nom = input ? input.value.trim() : "";
-      writePlayer(id, { nom: nom || "Joueur" });
-      editingId = null;
-    } else if (action === "delete"){
-      if (confirmDeleteId === id){
-        removePlayer(id);
-      } else {
-        confirmDeleteId = id;
-        renderPlayers();
-      }
-    }
-  });
-
-  document.addEventListener("keydown", function(e){
-    if (e.key !== "Enter") return;
-    if (e.target.matches('[data-field="nom"]')){
-      e.preventDefault();
-      var id = e.target.dataset.id;
-      writePlayer(id, { nom: e.target.value.trim() || "Joueur" });
-      editingId = null;
     }
   });
 
