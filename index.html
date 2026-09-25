@@ -3,28 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cagnotte fair-play — Limoges Football</title>
-<meta name="description" content="Compteur des amendes fair-play (jurons, insultes) pendant les entraînements U13 du Limoges Football, synchronisé en direct.">
+<title>Cagnotte langage — Limoges Football</title>
+<meta name="description" content="Compteur des amendes fair-play (jurons) pendant les entraînements U13 du Limoges Football, synchronisé en direct.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* identité Limoges Football — même palette que la cagnotte Sénégal */
     --bg-top:     #0c1322;
     --bg-bottom:  #182642;
 
     --ink:        #fff6ec;
     --ink-soft:   #c9d2e0;
-    --card-bg:    rgba(15, 22, 40, 0.6);
     --card-bg-solid: #16213b;
     --card-border:rgba(255, 255, 255, 0.14);
-    --card-shadow: 0 20px 45px -20px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.04) inset;
+    --card-shadow: 0 16px 34px -18px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.04) inset;
+
+    --tile-bg:    #131b30;
 
     --gold:       #fdd116;
-    --blue:       #4472c4;
     --juron:      #f6a63c;
-    --insulte:    #c81e2c;
     --ok:         #4cc26a;
     --live-dot:   #4cc26a;
     --demo-dot:   #fdd116;
@@ -41,14 +39,15 @@
       linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
     color: var(--ink);
     font-family: "Inter", system-ui, sans-serif;
-    padding: 28px 18px 52px;
+    padding: 28px 18px 100px;
     overflow-x:hidden;
   }
 
   h1,h2,.display{ font-family:"Fredoka", system-ui, sans-serif; }
   .num{ font-variant-numeric: tabular-nums; font-family:"Space Mono", ui-monospace, monospace; }
 
-  .wrap{ max-width: 1100px; margin: 0 auto; }
+  .wrap{ max-width: 1180px; margin: 0 auto; }
+  .narrow{ max-width: 760px; margin: 0 auto; }
 
   header{
     display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
@@ -63,7 +62,7 @@
   h1{ font-size: clamp(26px,4.6vw,38px); margin:0; font-weight:600; }
   .status{
     display:flex; align-items:center; gap:9px; font-size:13px; color: var(--ink-soft);
-    background: var(--card-bg); border:1px solid var(--card-border); border-radius:999px;
+    background: rgba(15,22,40,.6); border:1px solid var(--card-border); border-radius:999px;
     padding:8px 16px 8px 12px; backdrop-filter: blur(8px);
   }
   .dot{ width:8px; height:8px; border-radius:50%; background: var(--demo-dot); flex:none; }
@@ -78,100 +77,136 @@
   /* ---- Bandeau total ---- */
   .totalBanner{
     background: var(--card-bg-solid); border:1px solid var(--card-border); border-radius:22px;
-    box-shadow: var(--card-shadow); padding:22px 26px; margin-bottom:26px;
+    box-shadow: var(--card-shadow); padding:20px 26px; margin-bottom:22px;
     display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap;
   }
   .totalBanner .label{ font-size:13px; color: var(--ink-soft); text-transform:uppercase; letter-spacing:.1em; margin:0 0 4px; }
-  .totalBanner .amount{ font-size: clamp(34px,6vw,48px); font-weight:700; margin:0; }
-  .rules{ display:flex; gap:10px; flex-wrap:wrap; }
+  .totalBanner .amount{ font-size: clamp(32px,5.6vw,44px); font-weight:700; margin:0; }
   .rule-chip{
     display:flex; align-items:center; gap:7px; background: rgba(255,255,255,.06);
     border:1px solid var(--card-border); border-radius:999px; padding:8px 14px; font-size:13px;
   }
   .rule-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
 
-  .grid{
-    display:grid; gap:20px;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  /* ---- Bandeau annuler ---- */
+  .undoBanner{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    background: rgba(253,209,22,.1); border:1px solid rgba(253,209,22,.4); border-radius:16px;
+    padding:12px 18px; margin-bottom:22px; animation: undo-pop 300ms ease;
   }
+  .undoBanner p{ margin:0; font-size:14px; }
+  .undoBanner b{ color: var(--gold); }
+  @keyframes undo-pop{ from{ opacity:0; transform: translateY(-6px); } to{ opacity:1; transform:translateY(0); } }
+  .btn-undo{ background: var(--gold); color:#2b2205; font-weight:700; white-space:nowrap; border:none; border-radius:10px; padding:9px 14px; cursor:pointer; font-family:inherit; font-size:13.5px; }
+  .btn-undo:hover{ filter:brightness(1.08); }
 
-  .card{
-    background: var(--card-bg-solid); border:1px solid var(--card-border); border-radius:20px;
-    padding:20px 20px 18px; box-shadow: var(--card-shadow);
-    display:flex; flex-direction:column; gap:14px;
-  }
-  .name-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .name{ font-size:19px; margin:0; line-height:1.2; font-weight:600; }
-  .icon-btn{
-    border:none; background:transparent; color: var(--ink-soft); cursor:pointer;
-    font-size:13px; padding:5px 8px; border-radius:8px; font-family:inherit;
-  }
-  .icon-btn:hover{ background: rgba(255,255,255,.08); color: var(--ink); }
-  .icon-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:1px; }
+  .grid-caption{ text-align:center; color: var(--ink-soft); font-size:13px; margin: 0 0 16px; }
+  .grid-caption b{ color: var(--ink); }
 
-  .infraction-row{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background: rgba(255,255,255,.04); border:1px solid var(--card-border); border-radius:14px;
+  /* ---- Pastilles des joueurs ---- */
+  .playerGrid{
+    display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:26px;
+  }
+  .ptile{
+    position:relative; background: var(--tile-bg); border:2px solid var(--card-border); border-radius:999px;
+    padding:16px 14px; text-align:center; cursor:pointer; font-family:inherit;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    min-height:76px; transition: transform 110ms ease, border-color 150ms ease, background 150ms ease;
+  }
+  .ptile:hover{ background:#182238; }
+  .ptile:active{ transform: scale(.96); }
+  .ptile:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .ptile .pname{ font-weight:700; font-size:15px; color: var(--ink); }
+  .ptile .psub{ font-size:12px; color: var(--ink-soft); font-family:"Space Mono", monospace; }
+  .ptile.hasCount{ border-color: var(--juron); background: rgba(246,166,60,.09); }
+  .ptile.hasCount .psub{ color: var(--ink); font-weight:700; }
+  .ptile-badge{
+    position:absolute; top:-7px; right:-7px; width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;
+    color:#1a0f10; background: var(--juron); box-shadow:0 2px 6px rgba(0,0,0,.4); opacity:0; transform: scale(.4);
+    transition: opacity 200ms ease, transform 200ms cubic-bezier(.3,1.6,.5,1);
+  }
+  .ptile.pulse .ptile-badge{ opacity:1; transform: scale(1); }
+  .ptile.pulse{ animation: tile-pulse 480ms ease; }
+  @keyframes tile-pulse{
+    0%{ transform:scale(1); }
+    35%{ transform:scale(1.06); }
+    100%{ transform:scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce){ .ptile.pulse{ animation:none; } }
+  @media (max-width:620px){ .playerGrid{ grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width:380px){ .playerGrid{ grid-template-columns: 1fr; } }
+
+  /* ---- Cagnottes individuelles ---- */
+  .players{
+    background: var(--card-bg-solid); border:1px solid var(--card-border); border-radius:22px;
+    padding:20px 22px; box-shadow: var(--card-shadow); margin-bottom:18px;
+  }
+  .players h2{ font-size:16px; margin:0 0 14px; font-weight:600; }
+  .players-grid{
+    display:grid; gap:10px;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+  .player-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background: rgba(255,255,255,.04); border:1px solid var(--card-border); border-radius:12px;
     padding:10px 12px;
   }
-  .infraction-info{ display:flex; align-items:center; gap:9px; }
-  .infraction-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
-  .infraction-label{ font-size:14px; }
-  .infraction-count{ font-size:12.5px; color: var(--ink-soft); }
-  .stepper{ display:flex; align-items:center; gap:6px; }
-  .stepper button{
-    width:30px; height:30px; border-radius:9px; border:1px solid var(--card-border);
-    background: rgba(255,255,255,.06); color: var(--ink); font-size:16px; font-weight:700;
-    display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:inherit;
+  .player-row .pname{ font-size:14.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .player-row .ptotal{ font-size:14.5px; font-weight:700; flex:none; }
+  .player-row .ptotal.zero{ color: var(--ink-soft); font-weight:600; }
+  .player-row .pedit{
+    border:none; background:transparent; color: var(--ink-soft); cursor:pointer; font-size:13px;
+    padding:2px 5px; border-radius:6px; flex:none;
   }
-  .stepper button:hover{ background: rgba(255,255,255,.12); }
-  .stepper button.plus.juron{ border-color: var(--juron); color:#1a0f10; background: var(--juron); }
-  .stepper button.plus.juron:hover{ filter:brightness(1.08); }
-  .stepper button.plus.insulte{ border-color: var(--insulte); background: var(--insulte); color:#fff6ec; }
-  .stepper button.plus.insulte:hover{ filter:brightness(1.1); }
-  .stepper button:disabled{ opacity:.35; cursor:default; }
+  .player-row .pedit:hover{ background: rgba(255,255,255,.08); color: var(--ink); }
 
-  .subtotal{
-    display:flex; align-items:baseline; justify-content:space-between; padding-top:6px;
-    border-top:1px dashed var(--card-border);
+  .edit-panel{
+    grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px;
+    background: rgba(255,255,255,.04); border:1px solid var(--card-border); border-radius:12px; padding:12px;
   }
-  .subtotal .lbl{ font-size:12.5px; color: var(--ink-soft); text-transform:uppercase; letter-spacing:.08em; }
-  .subtotal .val{ font-size:21px; font-weight:700; }
+  .edit-actions{ display:flex; justify-content:space-between; gap:8px; }
 
-  .edit-panel{ display:flex; flex-direction:column; gap:9px; padding-top:8px; border-top:1px dashed var(--card-border); }
-  .edit-panel label{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color: var(--ink-soft); display:block; margin-bottom:3px; }
-  .edit-actions{ display:flex; justify-content:space-between; gap:8px; margin-top:2px; }
-
-  input[type="number"], input[type="text"]{
+  input[type="text"]{
     font-family: inherit; font-size:14px; color: var(--ink);
     background: rgba(255,255,255,.06); border:1px solid var(--card-border);
-    border-radius:10px; padding:10px 11px; width:100%;
+    border-radius:10px; padding:9px 10px; width:100%;
   }
   input::placeholder{ color: var(--ink-soft); }
   input:focus-visible{ outline:2px solid var(--gold); outline-offset:1px; }
-  button{ font-family:"Inter", sans-serif; font-weight:600; font-size:14px; cursor:pointer; border-radius:10px; border:1px solid transparent; padding:10px 15px; }
-  button:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
-  .btn-primary{ background: linear-gradient(135deg, #ff5a1f, var(--gold)); color:#1a0f10; white-space:nowrap; font-weight:700; }
+  button{ font-family:"Inter", sans-serif; }
+  .btn-primary{ background: linear-gradient(135deg, #ff5a1f, var(--gold)); color:#1a0f10; white-space:nowrap; font-weight:700; border:none; border-radius:10px; padding:9px 14px; cursor:pointer; font-size:13.5px; }
   .btn-primary:hover{ filter: brightness(1.08); }
-  .btn-ghost{ background: rgba(255,255,255,.06); border-color: var(--card-border); color: var(--ink); }
+  .btn-ghost{ background: rgba(255,255,255,.06); border:1px solid var(--card-border); color: var(--ink); border-radius:10px; padding:9px 14px; cursor:pointer; font-size:13.5px; font-weight:600; }
   .btn-ghost:hover{ background: rgba(255,255,255,.12); }
-  .btn-danger{ background:transparent; border-color: var(--card-border); color: var(--insulte); }
-  .btn-danger.confirm{ background: var(--insulte); color:#fff6ec; border-color: var(--insulte); }
+  .btn-danger{ background:transparent; border:1px solid var(--card-border); color:#e0555f; border-radius:10px; padding:9px 14px; cursor:pointer; font-size:13.5px; font-weight:600; }
+  .btn-danger.confirm{ background:#c81e2c; color:#fff6ec; border-color:#c81e2c; }
+  .field-error{ margin:-4px 0 0; font-size:12.5px; color:#e0555f; }
 
-  .field-error{ margin:-4px 0 0; font-size:12.5px; color: var(--insulte); }
 
-  .new-card{
-    border:2px dashed var(--card-border); background:transparent; box-shadow:none;
-    align-items:center; justify-content:center; text-align:center; min-height:180px; gap:12px;
+  /* ---- Journal ---- */
+  .journal{
+    background: var(--card-bg-solid); border:1px solid var(--card-border); border-radius:20px;
+    padding:18px 20px; box-shadow: var(--card-shadow);
   }
-  .new-card p{ margin:0; color: var(--ink-soft); font-size:14px; max-width:24ch; }
-  .new-form{ display:flex; flex-direction:column; gap:9px; width:100%; }
-  .hint{ font-size:12px; color: var(--ink-soft); margin-top:2px; }
+  .journal h2{ font-size:16px; margin:0 0 12px; font-weight:600; }
+  .journal-empty{ color: var(--ink-soft); font-size:13.5px; margin:0; }
+  .journal-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .journal-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:8px 10px; border-radius:10px; background: rgba(255,255,255,.03); font-size:13.5px;
+  }
+  .journal-left{ display:flex; align-items:center; gap:9px; min-width:0; }
+  .journal-dot{ width:9px; height:9px; border-radius:50%; flex:none; background: var(--juron); }
+  .journal-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .journal-time{ color: var(--ink-soft); font-size:12px; flex:none; }
+  .journal-cancel{ border:none; background:transparent; color: var(--ink-soft); cursor:pointer; text-decoration:underline; padding:0; font-size:12px; font-family:inherit; }
 
   footer{ text-align:center; color: var(--ink-soft); font-size:12px; margin-top:36px; opacity:.8; }
 
   @media (max-width:480px){
     .totalBanner{ flex-direction:column; align-items:flex-start; }
+    .undoBanner{ flex-direction:column; align-items:flex-start; }
   }
 </style>
 </head>
@@ -195,16 +230,28 @@
 
   <div class="totalBanner">
     <div>
-      <p class="label">Total collecté</p>
+      <p class="label">Cagnotte collective</p>
       <p class="amount num" id="totalAmount">0 €</p>
     </div>
-    <div class="rules">
-      <span class="rule-chip"><span class="rule-dot" style="background:var(--juron)"></span>0,50 € par juron</span>
-      <span class="rule-chip"><span class="rule-dot" style="background:var(--insulte)"></span>1 € par insulte</span>
-    </div>
+    <span class="rule-chip"><span class="rule-dot"></span>0,50 € à chaque appui</span>
   </div>
 
-  <div class="grid" id="grid"></div>
+  <div id="undoZone"></div>
+
+  <div class="narrow">
+    <p class="grid-caption">Appuyez sur un joueur pour ajouter <b>0,50 €</b> à sa cagnotte.</p>
+    <div class="playerGrid" id="playerGrid"></div>
+  </div>
+
+  <div class="players">
+    <h2>Cagnotte individuelle par joueur</h2>
+    <div class="players-grid" id="playersGrid"></div>
+  </div>
+
+  <div class="journal">
+    <h2>Dernières amendes</h2>
+    <div id="journalZone"></div>
+  </div>
 
   <footer>Limoges Football U13 · Cagnotte fair-play · propulsé par Google Sheets</footer>
 </div>
@@ -217,31 +264,38 @@
      ⚙️  CONFIGURATION
      ============================================================
      Même Google Sheet / même déploiement Apps Script que la
-     cagnotte "Cap sur le Sénégal" (onglet "Amendes" séparé).
+     cagnotte "Cap sur le Sénégal" (onglets "Joueurs" et "Amendes").
      Laissez vide pour lancer la page en mode démonstration.
   ============================================================ */
   var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyoWvec73omyuk3pqeE0S3SNyiQzVK6oAMmdaEfTmx45d6y2gR1TY9I5jO2zM3WghVIwA/exec";
   var POLL_MS = 15000;
 
   var TARIF_JURON = 0.5;
-  var TARIF_INSULTE = 1;
 
-  var DEMO_JOUEURS = [
-    { id:"demo-1", nom:"Exemple — Léo", jurons:2, insultes:0 },
-    { id:"demo-2", nom:"Exemple — Noah", jurons:0, insultes:1 }
+  var NOMS_DEMO = [
+    "Abdoul Karim","Adam","Bakoutoubo","Bilel","Emir","Ethan","Gabin","Hadi","Issam",
+    "Jalil","Kalifa","Keys","Loan","Mathis","Melih","Mickaël","Nourou","Pablo",
+    "Sacha","Sarah","Sebastien","Selyan","Yanis"
   ];
+  function demoJoueurs(){
+    return NOMS_DEMO.map(function(nom, i){ return { id: "j" + (i+1), nom: nom }; });
+  }
 
-  var state = { joueurs: [], mode: "loading" };
+  var state = { joueurs: [], amendes: [], mode: "loading" };
   var editingId = null;
   var confirmDeleteId = null;
-  var showNewForm = false;
+  var lastActionId = null;
   var pollTimer = null;
+  var pulseId = null;
 
-  var grid = document.getElementById("grid");
   var statusDot = document.getElementById("statusDot");
   var statusText = document.getElementById("statusText");
   var refreshBtn = document.getElementById("refreshBtn");
   var totalAmountEl = document.getElementById("totalAmount");
+  var undoZone = document.getElementById("undoZone");
+  var playerGrid = document.getElementById("playerGrid");
+  var playersGrid = document.getElementById("playersGrid");
+  var journalZone = document.getElementById("journalZone");
 
   function euros(n){
     n = Number(n) || 0;
@@ -252,8 +306,29 @@
       return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
     });
   }
-  function subtotal(j){
-    return (Number(j.jurons)||0) * TARIF_JURON + (Number(j.insultes)||0) * TARIF_INSULTE;
+  function timeAgo(ts){
+    var s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+    if (s < 60) return "à l'instant";
+    var m = Math.round(s / 60);
+    if (m < 60) return "il y a " + m + " min";
+    var h = Math.round(m / 60);
+    return "il y a " + h + " h";
+  }
+  function sortedJoueurs(){
+    return state.joueurs.slice().sort(function(a,b){
+      return String(a.nom).localeCompare(String(b.nom), "fr", { numeric: true });
+    });
+  }
+  function activeAmendes(){
+    return state.amendes.filter(function(a){ return a.statut !== "annule"; });
+  }
+  function totalFor(joueurId){
+    return activeAmendes()
+      .filter(function(a){ return a.joueurId === joueurId; })
+      .reduce(function(sum, a){ return sum + (Number(a.montant) || 0); }, 0);
+  }
+  function countFor(joueurId){
+    return activeAmendes().filter(function(a){ return a.joueurId === joueurId; }).length;
   }
 
   function setStatus(mode){
@@ -265,99 +340,97 @@
   }
 
   function updateTotal(){
-    var total = state.joueurs.reduce(function(sum, j){ return sum + subtotal(j); }, 0);
+    var total = activeAmendes().reduce(function(sum, a){ return sum + (Number(a.montant) || 0); }, 0);
     totalAmountEl.textContent = euros(total);
   }
 
-  function infractionRow(j, type){
-    var isJuron = type === "juron";
-    var count = isJuron ? (Number(j.jurons)||0) : (Number(j.insultes)||0);
-    var tarif = isJuron ? TARIF_JURON : TARIF_INSULTE;
-    var label = isJuron ? "Juron" : "Insulte";
-    var colorVar = isJuron ? "var(--juron)" : "var(--insulte)";
-    return (
-      '<div class="infraction-row">' +
-        '<div class="infraction-info">' +
-          '<span class="infraction-dot" style="background:' + colorVar + '"></span>' +
-          '<div>' +
-            '<div class="infraction-label">' + label + ' <span class="hint" style="margin:0">(' + euros(tarif) + ')</span></div>' +
-            '<div class="infraction-count num">' + count + ' × ' + euros(tarif) + ' = ' + euros(count * tarif) + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="stepper">' +
-          '<button type="button" data-action="dec" data-type="' + type + '" data-id="' + j.id + '"' + (count <= 0 ? ' disabled' : '') + '>−</button>' +
-          '<button type="button" class="plus ' + type + '" data-action="inc" data-type="' + type + '" data-id="' + j.id + '">+</button>' +
-        '</div>' +
-      '</div>'
-    );
+  // ---- Pastilles des joueurs ----
+  function renderGrid(){
+    var joueurs = sortedJoueurs();
+    playerGrid.innerHTML = joueurs.map(function(j){
+      var count = countFor(j.id);
+      var montant = count * TARIF_JURON;
+      var isPulsing = pulseId === j.id;
+      var classes = "ptile" + (count > 0 ? " hasCount" : "") + (isPulsing ? " pulse" : "");
+      return (
+        '<button type="button" class="' + classes + '" data-action="tap-tile" data-id="' + j.id + '">' +
+          '<span class="ptile-badge">✓</span>' +
+          '<span class="pname">' + esc(j.nom) + '</span>' +
+          (count > 0 ? '<span class="psub num">' + euros(montant) + '</span>' : '') +
+        '</button>'
+      );
+    }).join("");
+    pulseId = null;
   }
 
-  function playerCard(j){
-    var isEditing = editingId === j.id;
-    var isConfirmingDelete = confirmDeleteId === j.id;
-
-    var head =
-      '<div class="name-row">' +
-        '<h2 class="name">' + esc(j.nom || "Joueur") + '</h2>' +
-        '<button class="icon-btn" data-action="toggle-edit" data-id="' + j.id + '">' + (isEditing ? "Fermer" : "Modifier") + '</button>' +
-      '</div>';
-
-    var rows = infractionRow(j, "juron") + infractionRow(j, "insulte");
-
-    var sub =
-      '<div class="subtotal">' +
-        '<span class="lbl">Total joueur</span>' +
-        '<span class="val num">' + euros(subtotal(j)) + '</span>' +
-      '</div>';
-
-    var editPanel = "";
-    if (isEditing){
-      editPanel =
+  // ---- Cagnottes individuelles ----
+  function renderPlayers(){
+    var joueurs = sortedJoueurs();
+    playersGrid.innerHTML = joueurs.map(function(j){
+      var total = totalFor(j.id);
+      var isEditing = editingId === j.id;
+      var isConfirmingDelete = confirmDeleteId === j.id;
+      var row =
+        '<div class="player-row" data-id="' + j.id + '">' +
+          '<span class="pname" title="' + esc(j.nom) + '">' + esc(j.nom) + '</span>' +
+          '<span class="ptotal num' + (total <= 0 ? ' zero' : '') + '">' + euros(total) + '</span>' +
+          '<button type="button" class="pedit" data-action="toggle-edit" data-id="' + j.id + '" title="Modifier">✏️</button>' +
+        '</div>';
+      if (!isEditing) return row;
+      return row +
         '<div class="edit-panel">' +
-          '<div><label>Nom</label><input type="text" data-field="nom" value="' + esc(j.nom) + '"></div>' +
+          '<input type="text" data-field="nom" data-id="' + j.id + '" value="' + esc(j.nom) + '">' +
           '<div class="edit-actions">' +
-            '<button class="' + (isConfirmingDelete ? 'btn-danger confirm' : 'btn-danger') + '" data-action="delete" data-id="' + j.id + '">' + (isConfirmingDelete ? "Confirmer la suppression" : "Supprimer") + '</button>' +
-            '<button class="btn-primary" data-action="save" data-id="' + j.id + '">Enregistrer</button>' +
+            '<button type="button" class="' + (isConfirmingDelete ? 'btn-danger confirm' : 'btn-danger') + '" data-action="delete" data-id="' + j.id + '">' + (isConfirmingDelete ? "Confirmer" : "Supprimer") + '</button>' +
+            '<button type="button" class="btn-primary" data-action="save" data-id="' + j.id + '">Enregistrer</button>' +
           '</div>' +
         '</div>';
-    }
-
-    var card = document.createElement("div");
-    card.className = "card";
-    card.dataset.id = j.id;
-    card.innerHTML = head + rows + sub + editPanel;
-    return card;
+    }).join("");
   }
 
-  function newPlayerCard(){
-    var card = document.createElement("div");
-    card.className = "card new-card";
-    if (!showNewForm){
-      card.innerHTML =
-        '<p>Ajouter un joueur au suivi fair-play.</p>' +
-        '<button class="btn-ghost" data-action="show-new-form">+ Nouveau joueur</button>';
-    } else {
-      card.innerHTML =
-        '<div class="new-form">' +
-          '<div><label class="hint">Nom du joueur</label><input type="text" data-field="new-nom" placeholder="Ex : Léo Martin"></div>' +
-          '<p class="field-error" hidden>Indiquez un nom.</p>' +
-          '<div class="edit-actions">' +
-            '<button type="button" class="btn-ghost" data-action="cancel-new-form">Annuler</button>' +
-            '<button type="button" class="btn-primary" data-action="create-player">Ajouter</button>' +
-          '</div>' +
-        '</div>';
+  // ---- Bandeau "Annuler" ----
+  function renderUndo(){
+    var last = lastActionId ? state.amendes.find(function(a){ return a.id === lastActionId && a.statut !== "annule"; }) : null;
+    if (!last){ undoZone.innerHTML = ""; return; }
+    undoZone.innerHTML =
+      '<div class="undoBanner">' +
+        '<p>Dernière amende : <b>' + euros(last.montant) + '</b> pour <b>' + esc(last.joueurNom) + '</b>.</p>' +
+        '<button type="button" class="btn-undo" data-action="undo-last">↩ Annuler</button>' +
+      '</div>';
+  }
+
+  // ---- Journal des dernières amendes ----
+  function renderJournal(){
+    var entries = activeAmendes()
+      .slice()
+      .sort(function(a,b){ return (b.timestamp||0) - (a.timestamp||0); })
+      .slice(0, 10);
+    if (!entries.length){
+      journalZone.innerHTML = '<p class="journal-empty">Aucune amende enregistrée pour le moment.</p>';
+      return;
     }
-    return card;
+    journalZone.innerHTML = '<ul class="journal-list">' + entries.map(function(a){
+      var canCancel = a.id === lastActionId;
+      return (
+        '<li class="journal-row">' +
+          '<div class="journal-left">' +
+            '<span class="journal-dot"></span>' +
+            '<span class="journal-text">' + esc(a.joueurNom) + ' — ' + euros(a.montant) + '</span>' +
+          '</div>' +
+          '<span class="journal-time">' + timeAgo(a.timestamp) +
+            (canCancel ? ' · <button type="button" class="journal-cancel" data-action="undo-last">annuler</button>' : '') +
+          '</span>' +
+        '</li>'
+      );
+    }).join("") + '</ul>';
   }
 
   function render(){
-    grid.innerHTML = "";
-    state.joueurs
-      .slice()
-      .sort(function(a,b){ return String(a.nom).localeCompare(String(b.nom), "fr"); })
-      .forEach(function(j){ grid.appendChild(playerCard(j)); });
-    grid.appendChild(newPlayerCard());
+    renderGrid();
+    renderPlayers();
     updateTotal();
+    renderUndo();
+    renderJournal();
   }
 
   function hasBackend(){ return !!APPS_SCRIPT_URL; }
@@ -378,6 +451,7 @@
     apiGet().then(function(res){
       if (!res || !res.ok){ throw new Error("bad response"); }
       state.joueurs = (res.joueurs || []).slice();
+      state.amendes = (res.amendes || []).slice();
       setStatus("live");
       render();
     }).catch(function(){
@@ -392,7 +466,8 @@
 
   function init(){
     if (!hasBackend()){
-      state.joueurs = DEMO_JOUEURS.slice();
+      state.joueurs = demoJoueurs();
+      state.amendes = [];
       setStatus("demo");
       render();
       return;
@@ -404,21 +479,44 @@
   refreshBtn.addEventListener("click", function(){ if (hasBackend()) loadFromBackend(); });
 
   // ---- Mutations ----
-  function bump(id, type, delta){
-    var j = state.joueurs.find(function(x){ return x.id === id; });
-    if (!j) return;
-    var field = type === "juron" ? "jurons" : "insultes";
-    j[field] = Math.max(0, (Number(j[field]) || 0) + delta);
+  function addInfraction(joueurId, joueurNom){
+    var montant = TARIF_JURON;
+    var localEntry = {
+      id: "local-" + Date.now(),
+      joueurId: joueurId, joueurNom: joueurNom, type: "juron",
+      montant: montant, timestamp: Date.now(), statut: "actif"
+    };
+    state.amendes.push(localEntry);
+    lastActionId = localEntry.id;
+    pulseId = joueurId;
     render();
+
     if (hasBackend()){
-      apiPost("add_infraction", { id: id, type: type, delta: delta }).then(function(res){
-        if (res && res.ok && res.joueur){
-          var idx = state.joueurs.findIndex(function(x){ return x.id === id; });
-          if (idx > -1){ state.joueurs[idx] = res.joueur; render(); }
+      apiPost("add_infraction", { joueurId: joueurId, joueurNom: joueurNom, type: "juron" }).then(function(res){
+        if (res && res.ok && res.entry){
+          var idx = state.amendes.findIndex(function(a){ return a.id === localEntry.id; });
+          if (idx > -1){
+            state.amendes[idx] = res.entry;
+            if (lastActionId === localEntry.id) lastActionId = res.entry.id;
+            render();
+          }
         } else {
           loadFromBackend();
         }
       }).catch(function(){});
+    }
+  }
+
+  function undoLast(){
+    if (!lastActionId) return;
+    var entry = state.amendes.find(function(a){ return a.id === lastActionId; });
+    if (!entry) return;
+    entry.statut = "annule";
+    var undoneId = lastActionId;
+    lastActionId = null;
+    render();
+    if (hasBackend() && undoneId.indexOf("local-") !== 0){
+      apiPost("cancel_infraction", { id: undoneId }).catch(function(){});
     }
   }
 
@@ -434,17 +532,10 @@
     }
   }
 
-  function addPlayer(nom){
-    if (hasBackend()){
-      apiPost("add_joueur", { nom: nom }).then(function(){ loadFromBackend(); }).catch(function(){});
-    } else {
-      state.joueurs.push({ id: "j" + Date.now(), nom: nom, jurons: 0, insultes: 0 });
-      render();
-    }
-  }
-
   function removePlayer(id){
     state.joueurs = state.joueurs.filter(function(x){ return x.id !== id; });
+    editingId = null;
+    confirmDeleteId = null;
     render();
     if (hasBackend()){
       apiPost("delete_joueur", { id: id }).catch(function(){});
@@ -452,65 +543,45 @@
   }
 
   // ---- Events ----
-  grid.addEventListener("click", function(e){
+  document.addEventListener("click", function(e){
     var btn = e.target.closest("[data-action]");
     if (!btn) return;
     var action = btn.dataset.action;
     var id = btn.dataset.id;
 
-    if (action === "inc"){
-      bump(id, btn.dataset.type, 1);
-    } else if (action === "dec"){
-      bump(id, btn.dataset.type, -1);
+    if (action === "tap-tile"){
+      var joueur = state.joueurs.find(function(x){ return x.id === id; });
+      addInfraction(id, joueur ? joueur.nom : "");
+    } else if (action === "undo-last"){
+      undoLast();
     } else if (action === "toggle-edit"){
       editingId = editingId === id ? null : id;
       confirmDeleteId = null;
-      render();
+      renderPlayers();
     } else if (action === "save"){
-      var card = btn.closest(".card");
-      var nom = card.querySelector('[data-field="nom"]').value.trim() || "Joueur";
-      writePlayer(id, { nom: nom });
+      var input = document.querySelector('[data-field="nom"][data-id="' + id + '"]');
+      var nom = input ? input.value.trim() : "";
+      writePlayer(id, { nom: nom || "Joueur" });
       editingId = null;
     } else if (action === "delete"){
       if (confirmDeleteId === id){
         removePlayer(id);
-        confirmDeleteId = null;
-        editingId = null;
       } else {
         confirmDeleteId = id;
-        render();
+        renderPlayers();
       }
-    } else if (action === "show-new-form"){
-      showNewForm = true;
-      render();
-    } else if (action === "cancel-new-form"){
-      showNewForm = false;
-      render();
-    } else if (action === "create-player"){
-      submitNewPlayer(btn);
     }
   });
 
-  grid.addEventListener("keydown", function(e){
+  document.addEventListener("keydown", function(e){
     if (e.key !== "Enter") return;
-    var newForm = e.target.closest(".new-form");
-    if (newForm){
+    if (e.target.matches('[data-field="nom"]')){
       e.preventDefault();
-      submitNewPlayer(newForm.querySelector('[data-action="create-player"]'));
+      var id = e.target.dataset.id;
+      writePlayer(id, { nom: e.target.value.trim() || "Joueur" });
+      editingId = null;
     }
   });
-
-  function submitNewPlayer(btn){
-    var card = btn.closest(".card");
-    var nom = card.querySelector('[data-field="new-nom"]').value.trim();
-    if (!nom){
-      var msg = card.querySelector(".field-error");
-      if (msg) msg.hidden = false;
-      return;
-    }
-    showNewForm = false;
-    addPlayer(nom);
-  }
 
   init();
 })();
